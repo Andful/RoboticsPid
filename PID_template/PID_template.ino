@@ -52,7 +52,7 @@ void loop()
         // sending the current position to the serial connection so that it can be plotted
         Serial.println(pos);
         updatePosition();
-        setMovement(500);
+        setMovement(16);
 }
 
 int sign(int value)
@@ -69,8 +69,10 @@ void updatePosition()
 // method to set direction and speed of the motor
 void setMovement(int speed1) 
 {
+  speed1 = speed1 > 255 ? 255 : speed1;
+  speed1 = speed1 < -255 ? -255 : speed1;
   int dir = sign(speed1);
-
+  
   if(dir == 1)
   {
     digitalWrite(IN2,LOW);
