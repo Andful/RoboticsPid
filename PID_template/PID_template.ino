@@ -11,7 +11,7 @@
 
 // ******** <TODO> **********************
 // ******** define interval between recomputing error and adjusting feedback (in milliseconds) ********************** 
-const int INTERVAL = 0; 
+const int INTERVAL = 20; 
 
 
 unsigned long previousTime = 0;
@@ -52,9 +52,32 @@ void loop()
         // sending the current position to the serial connection so that it can be plotted
         Serial.println(pos);
         updatePosition();
-        setMovement(16);
+        //setMovement(-38); //38 minimum
+        readInput();
+        if(abs(pos - target) > 10){
+          update();
+          setMovement(motorSpeed);
+        } else{
+          setMovement(0);
+        }
 }
 
+int prev_err=0;
+int integral=0;
+void update(){
+  int error = target-pos;
+  int direct = sign(error);
+  int prop = error * kp;
+  integral += error * INTERVAL * ki;
+  int derivative = (error - prev_err) * kd / INTERVAL;
+  prev_err = error;
+  int output = prop + integral + derivative;
+  motorSpeed = calculate_Speed(direct*output);
+}
+
+int calculate_Speed(int value){
+  return value >= 0 ? value : -value;
+}
 int sign(int value)
 {
   if (value == 0) return 0;
