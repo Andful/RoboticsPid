@@ -11,7 +11,7 @@
 
 // ******** <TODO> **********************
 // ******** define interval between recomputing error and adjusting feedback (in milliseconds) ********************** 
-const int INTERVAL = 50; 
+const int INTERVAL = 10; 
 const float MAX_SPEED = 255.0;
 const float MIN_SPEED = -255.0;
 
@@ -44,6 +44,7 @@ void setup()
     pinMode(IN2, OUTPUT);
     
     pinMode(SENSOR_PIN, INPUT);   
+    updatePosition();
 }
 
 unsigned long previousMillis = 0;
@@ -61,9 +62,11 @@ void loop()
         if(currentMillis - previousMillis >= INTERVAL){
           //setMovement(-38); //38 minimum
           Serial.println(pos);
+          if(abs(pos - target) > (1024 / 360 * 3)){            
+            update();
+          }
           readInput();
           previousMillis = currentMillis;
-          update();
         }
 }
 
@@ -76,12 +79,12 @@ void update(){
   float temp = oldPos - pos;
   
   float prop = error * kp;
-  
-  integral += error * ki - kp * temp;
+  prop = abs(prop) < 38 ? 40 * sign(prop) : prop;
+  integral = ki == 0 ? 0 : integral + error * ki * INTERVAL - kp * temp;
   integral = integral > MAX_SPEED ? MAX_SPEED : integral;
   integral = integral < MIN_SPEED ? MIN_SPEED : integral;
   
-  float derivative = temp * kd;
+  float derivative = temp * kd / INTERVAL;
   
   float output = prop + integral - derivative;
   output = output > MAX_SPEED ? MAX_SPEED : output;
@@ -120,6 +123,7 @@ void setMovement(float speed1)
     digitalWrite(IN1,LOW);
     digitalWrite(IN2,LOW);
   }
+  speed1 = speed1 < 0 ? -speed1 : speed1;
   analogWrite(ENA,speed1);
 }
 
@@ -146,23 +150,17 @@ void readInput()
             // change the value of the proportional gain parameter
             valueString = commandString.substring(3, commandString.length());
             kp = valueString.toFloat();
-            if(kp<0){
-              kp=0;
-            }
+            kp = kp < 0 ? 0 : kp;
         } else if (commandString.startsWith("ki")) {
             // change the value of the integral gain parameter
             valueString = commandString.substring(3, commandString.length());
             ki = valueString.toFloat();
-            if(ki<0){
-              ki=0;
-            }
+            ki = ki < 0 ? 0 : ki;
         } else if (commandString.startsWith("kd")) {
             // change the value of the derivative gain parameter
             valueString = commandString.substring(3, commandString.length());
             kd = valueString.toFloat();
-            if(kd<0){
-              kd=0;
-            }
+            kd = kd < 0 ? 0 : kd;
         }
     }
 }
