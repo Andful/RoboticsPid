@@ -34,61 +34,67 @@ int pos = 0; // current position for plotting
 float prev_err=0;
 float integral=0;
 
+const int ERRORS_STORED = 20;
+float errors[ERRORS_STORED];
+
 // setup code, setting pin modes and initialising the serial connection
-void setup() 
-{
+void setup() {
     Serial.begin(115200);
 
     pinMode(ENA, OUTPUT);
     pinMode(IN1, OUTPUT);
     pinMode(IN2, OUTPUT);
     
-    pinMode(SENSOR_PIN, INPUT);   
+    pinMode(SENSOR_PIN, INPUT);
+    reset_error();
     updatePosition();
 }
 
 unsigned long previousMillis = 0;
 void loop() 
 {
-        //  ******** <TODO> **********************
-        //  ******** implement your code  here **********************
-        //  ******** HINT: you have to use the function readInput() somewhere
-        //     if you wish to update PID parameters from with python script **********************
-
-        // sending the current position to the serial connection so that it can be plotted
-
         unsigned long currentMillis = millis();
         
         if(currentMillis - previousMillis >= INTERVAL){
-          //setMovement(-38); //38 minimum
-          Serial.println(pos);
-          if(abs(pos - target) > (1024 / 360 * 3)){            
-            update();
-          }
+          Serial.println(pos);         
+          update();
           readInput();
           previousMillis = currentMillis;
         }
 }
 
+void reset_error() {
+  for (int i = 0; i < ERRORS_STORED; i++) {
+    errors[i] = 0;
+  }
+}
+
+void appendError(float current_error) {
+  for (int i = ERRORS_STORED - 1; i > 0 ; i--) {
+      errors[i] = errors[i - 1];
+  }
+
+  errors[0] = current_error;
+}
+
+float integral_error() {
+  float result = 0;
+  for (int i = 0; i < ERRORS_STORED; i++) {
+      result += (errors[i] > 10) ? errors[i] : 0;
+  }
+
+  return result * INTERVAL;
+}
+
 void update(){
   float oldPos = pos;
   updatePosition();
-  float error = target-pos;
-  prev_err = error;
+  appendError(target-pos);
+  float deltaPos = oldPos - pos;
   
-  float temp = oldPos - pos;
+  float derivative = kd * deltaPos / INTERVAL;
   
-  float prop = error * kp;
-  prop = abs(prop) < 38 ? 40 * sign(prop) : prop;
-  integral = ki == 0 ? 0 : integral + error * ki * INTERVAL - kp * temp;
-  integral = integral > MAX_SPEED ? MAX_SPEED : integral;
-  integral = integral < MIN_SPEED ? MIN_SPEED : integral;
-  
-  float derivative = temp * kd / INTERVAL;
-  
-  float output = prop + integral - derivative;
-  output = output > MAX_SPEED ? MAX_SPEED : output;
-  output = output < MIN_SPEED ? MIN_SPEED : output;
+  float output = kp * errors[0] + ki*integral_error() - kd * deltaPos / INTERVAL;
   setMovement(output);
 }
 
@@ -106,6 +112,8 @@ void updatePosition()
 // method to set direction and speed of the motor
 void setMovement(float speed1) 
 {
+  speed1 = speed1 > MAX_SPEED ? MAX_SPEED : speed1;
+  speed1 = speed1 < MIN_SPEED ? MIN_SPEED : speed1;
   int dir = sign(speed1);
   
   if(dir == 1)
@@ -131,6 +139,7 @@ void setMovement(float speed1)
 void readInput() 
 {
     if (Serial.available()) {
+        reset_error();
         commandString = Serial.readStringUntil('\n');
         if (commandString.startsWith("target")) {
             // change the target value that the motor should rotate to
