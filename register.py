@@ -160,12 +160,16 @@ def get_acc_val(v):
     ser.write('acc '.encode() + str(cmd_val).encode() + '\n'.encode())
 acc_entry.bind('<Return>', get_acc_val)
 
-auto_label = tk.Label(frame, text="auto: ")
-auto_label.grid(row=3, column=2)
-auto_entry = tk.Entry(frame)
-auto_entry.grid(row=3, column=3)
+period_lable = tk.Label(frame, text='init', font=(None, 15))
+period_lable.grid(row=3, column=4)
+period_lable.config(text="Period[s]:")
+
+amplitude_lable = tk.Label(frame, text='init', font=(None, 15))
+amplitude_lable.grid(row=4, column=4)
+amplitude_lable.config(text="Amplitude:")
+
 from numpy.fft import fft
-def get_auto_val(v):
+def get_auto_val():
     print(y_val)
     dft = np.abs(fft(y_val))
     dft[0] = 0
@@ -175,10 +179,33 @@ def get_auto_val(v):
     if freq > len(dft)/2: freq = len(dft) - freq
 
     print("frequency:", freq)
-    amp = (np.max(y_val) - np.min(y_val))/ 2
+    amp = (np.max(y_val) - np.min(y_val))/ 2 * 360/1024
     print("amplitude:",amp)
 
-auto_entry.bind('<Return>', get_auto_val)
+    period = 10/freq
+
+    period_lable.config(text="Period[s]:{:.2f}".format(period))
+    amplitude_lable.config(text="Amplitude:{:.2f}".format(amp))
+
+    _kp = amp/5
+    _ki = _kp*0.02*2/period
+    _kd = _kp*period/3/0.02
+
+    kp_entry.delete(0,tk.END)
+    kp_entry.insert(0,_kp)
+
+    ki_entry.delete(0,tk.END)
+    ki_entry.insert(0,_ki)
+
+    kd_entry.delete(0,tk.END)
+    kd_entry.insert(0,_kd)
+
+    get_kp_val(0)
+    get_ki_val(0)
+    get_kd_val(0)
+
+auto_button = tk.Button(frame,text='auto',command=get_auto_val)
+auto_button.grid(row=2, column=3)
 
 
 
@@ -201,7 +228,7 @@ def callback():
     get_acc_val(0)
 
 change_position = tk.Button(frame,text='change',command=callback)
-change_position.grid(row=2, column=3)
+change_position.grid(row=1, column=3)
 
 # creating a label to show the current target
 target_label = tk.Label(frame, text='init', font=(None, 15))
