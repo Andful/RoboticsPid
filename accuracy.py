@@ -151,7 +151,7 @@ def get_kd_val(v):
     ser.write('kd '.encode() + str(cmd_val).encode() + '\n'.encode())
 kd_entry.bind('<Return>', get_kd_val)
 
-acc_label = tk.Label(frame, text="kd: ")
+acc_label = tk.Label(frame, text="acc: ")
 acc_label.grid(row=0, column=2)
 acc_entry = tk.Entry(frame)
 acc_entry.grid(row=0, column=3)
@@ -159,6 +159,17 @@ def get_acc_val(v):
     cmd_val = float(acc_entry.get())
     ser.write('acc '.encode() + str(cmd_val).encode() + '\n'.encode())
 acc_entry.bind('<Return>', get_acc_val)
+
+is_200 = False
+def callback():
+    is_200 = not is_200
+    if is_200:
+        get_target_val(200)
+    else:
+        get_target_val(800)
+
+change_position = tk.Button(frame,text='change',command=callback)
+chamge_position.grid(row=2, column=3)
 
 # creating a label to show the current target
 target_label = tk.Label(frame, text='init', font=(None, 15))
