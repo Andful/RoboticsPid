@@ -169,7 +169,6 @@ def callback():
     else:
         cmd_val = 800
         
-    cmd_val = int(target_entry.get())
     ser.write('target '.encode() + str(cmd_val).encode() + '\n'.encode())
     target_val = [cmd_val] * buf
     target_line.set_ydata(target_val)
