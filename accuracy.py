@@ -177,7 +177,7 @@ def callback():
     get_kp_val(0)
     get_ki_val(0)
     get_kd_val(0)
-    get_acc_val()
+    get_acc_val(0)
 
 change_position = tk.Button(frame,text='change',command=callback)
 change_position.grid(row=2, column=3)
