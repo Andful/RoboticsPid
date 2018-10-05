@@ -162,14 +162,25 @@ acc_entry.bind('<Return>', get_acc_val)
 
 is_200 = False
 def callback():
+    global is_200
     is_200 = not is_200
     if is_200:
-        get_target_val(200)
+        cmd_val = 200
     else:
-        get_target_val(800)
+        cmd_val = 800
+        
+    cmd_val = int(target_entry.get())
+    ser.write('target '.encode() + str(cmd_val).encode() + '\n'.encode())
+    target_val = [cmd_val] * buf
+    target_line.set_ydata(target_val)
+    
+    get_kp_val(0)
+    get_ki_val(0)
+    get_kd_val(0)
+    get_acc_val()
 
 change_position = tk.Button(frame,text='change',command=callback)
-chamge_position.grid(row=2, column=3)
+change_position.grid(row=2, column=3)
 
 # creating a label to show the current target
 target_label = tk.Label(frame, text='init', font=(None, 15))
