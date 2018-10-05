@@ -33,6 +33,7 @@ int pos = 0; // current position for plotting
 
 float prev_err=0;
 float integral=0;
+float oldPos=0;
 
 // setup code, setting pin modes and initialising the serial connection
 void setup() 
@@ -62,6 +63,7 @@ void loop()
         if(currentMillis - previousMillis >= INTERVAL){
           //setMovement(-38); //38 minimum
           Serial.println(pos);
+          updatePosition();
           if(abs(pos - target) > (1024 / 360 * 3)){            
             update();
           }
@@ -71,8 +73,7 @@ void loop()
 }
 
 void update(){
-  float oldPos = pos;
-  updatePosition();
+  oldPos = pos;
   float error = target-pos;
   prev_err = error;
   
