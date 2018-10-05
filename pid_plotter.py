@@ -11,6 +11,8 @@ import serial
 import argparse
 import time
 from collections import deque
+import socket
+import sys
 
 # matplotlib for plotting the servo positions
 import matplotlib
@@ -56,6 +58,8 @@ target = int(args.target)
 
 # initialising serial connection
 ser = serial.Serial(port, baud_rate)
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+server_address = ('localhost', 10000)
 
 # initialising the figure and range of the axes
 fig = plt.figure()
@@ -157,10 +161,13 @@ def animate(v):
     while ser.in_waiting > 0:
         try:
             line = ser.readline()
+            if line.decode('ASCII').startswith('output:'):
+                sock.sendto(line, server_address)
+                continue
             number = line.strip().decode('ASCII')
             val = int(number)
 
-            # update y data
+            # update y datastartswith(
             if len(y_val) < buf:
                 y_val.appendleft(val)
             else:
